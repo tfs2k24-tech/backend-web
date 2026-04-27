@@ -15,7 +15,6 @@ const app = express();
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow all origins (dev + prod)
     callback(null, true);
   },
   credentials: true,
@@ -24,29 +23,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// ← DELETE everything after this until your middleware section
-
-// ✅ DELETE the manual middleware below — it conflicts with cors()
-
-// ✅ IMPORTANT: manual preflight handler (safe for Express 5)
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PUT,DELETE,PATCH,OPTIONS"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-
-  next();
-});
+app.options("(.*)", cors(corsOptions));
 
 /* ------------------ MIDDLEWARE ------------------ */
 
@@ -55,9 +32,7 @@ app.use(express.json());
 /* ------------------ ROUTES ------------------ */
 
 app.get("/", (req, res) => {
-  res.json({
-    message: "TFS Backend API 🚀",
-  });
+  res.json({ message: "TFS Backend API 🚀" });
 });
 
 app.get("/health", (req, res) => {
