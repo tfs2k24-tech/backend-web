@@ -11,8 +11,6 @@ dotenv.config();
 
 const app = express();
 
-/* ------------------ CORS ------------------ */
-
 const corsOptions = {
   origin: function (origin, callback) {
     callback(null, true);
@@ -25,11 +23,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("(.*)", cors(corsOptions));
 
-/* ------------------ MIDDLEWARE ------------------ */
-
 app.use(express.json());
-
-/* ------------------ ROUTES ------------------ */
 
 app.get("/", (req, res) => {
   res.json({ message: "TFS Backend API 🚀" });
@@ -43,8 +37,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/queries", queryRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-
-/* ------------------ ERROR HANDLING ------------------ */
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
