@@ -11,86 +11,70 @@ dotenv.config();
 
 const app = express();
 
-/* ------------------ CORS (TOP PRIORITY) ------------------ */
-
-const allowedOrigins = [
-  "http://localhost:5174",
-  "http://localhost:5173",
-];
+/* ------------------ CORS ------------------ */
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // allow requests without origin (Postman, mobile apps)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.log("Blocked by CORS:", origin);
-      return callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: [
+    "http://localhost:5174",
+    "http://localhost:5173"
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-/* 🔥 APPLY CORS FIRST */
 app.use(cors(corsOptions));
 
-/* 🔥 HANDLE PREFLIGHT EXPLICITLY */
-app.options("*", cors(corsOptions));
-
-/* ------------------ BODY PARSER ------------------ */
-app.use(express.json());
-
-/* ------------------ DEBUG (optional but useful) ------------------ */
+// ✅ IMPORTANT: manual preflight handler (safe for Express 5)
 app.use((req, res, next) => {
-  console.log("Incoming:", req.method, req.url);
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,DELETE,PATCH,OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
   next();
 });
 
+/* ------------------ MIDDLEWARE ------------------ */
+
+app.use(express.json());
+
 /* ------------------ ROUTES ------------------ */
 
-// Root route
 app.get("/", (req, res) => {
   res.json({
     message: "TFS Backend API 🚀",
   });
 });
 
-// Health route
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-  });
+  res.status(200).json({ status: "OK" });
 });
 
-// API routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/queries", queryRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 
-/* ------------------ 404 ------------------ */
+/* ------------------ ERROR HANDLING ------------------ */
+
 app.use((req, res) => {
-  res.status(404).json({
-    error: "Route not found",
-    path: req.originalUrl,
-  });
+  res.status(404).json({ error: "Route not found" });
 });
 
-/* ------------------ GLOBAL ERROR HANDLER ------------------ */
 app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
-
-  // 🔥 Ensure CORS headers are always sent even on error
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Credentials", "true");
-
-  res.status(500).json({
-    error: err.message || "Internal server error",
-  });
+  console.error("Error:", err);
+  res.status(500).json({ error: err.message });
 });
 
 export default app;
