@@ -11,60 +11,54 @@ dotenv.config();
 
 const app = express();
 
-// CORS setup
-const isLocalDevOrigin = (origin) =>
-  /^http:\/\/localhost:\d+$/.test(origin) ||
-  /^http:\/\/127\.0\.0\.1:\d+$/.test(origin);
+/* ------------------ CORS ------------------ */
+
+const allowedOrigins = [
+  "http://localhost:5174",
+  "http://localhost:5173",
+];
 
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-    : (origin, callback) => {
-        if (!origin || isLocalDevOrigin(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
+  origin: function (origin, callback) {
+    // allow requests with no origin (like Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.options("*", cors(corsOptions)); // preflight
+
+/* ------------------ IMPORTANT ------------------ */
+app.use(express.json());   // ✅ YOU MISSED THIS
 
 /* ------------------ ROUTES ------------------ */
 
-// Root route (fixes your issue)
 app.get("/", (req, res) => {
   res.json({
     message: "TFS Backend API 🚀",
-    endpoints: [
-      "/health",
-      "/api/admin",
-      "/api/queries",
-      "/api/teams",
-      "/api/testimonials",
-    ],
   });
 });
 
-// Health route
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
-    message: "Server is running",
   });
 });
 
-// API routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/queries", queryRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 
-/* ------------------ ERROR HANDLING ------------------ */
+/* ------------------ ERRORS ------------------ */
 
-// 404
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
@@ -72,9 +66,13 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err);
+
+  // 🔥 IMPORTANT: send proper CORS headers even on error
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Credentials", "true");
+
   res.status(500).json({
     error: err.message || "Internal server error",
   });
