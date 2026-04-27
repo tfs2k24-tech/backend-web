@@ -14,17 +14,17 @@ const app = express();
 /* ------------------ CORS ------------------ */
 
 const corsOptions = {
-  origin: [
-    "http://localhost:5174",
-    "http://localhost:5173",
-    "https://your-frontend.vercel.app", // ← add your actual frontend URL here
-  ],
+  origin: function (origin, callback) {
+    // Allow all origins (dev + prod)
+    callback(null, true);
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
+// ← DELETE everything after this until your middleware section
 
 // ✅ DELETE the manual middleware below — it conflicts with cors()
 
