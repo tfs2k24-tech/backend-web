@@ -1,12 +1,18 @@
 import dotenv from "dotenv";
 import app from "./app.js";
 import { connectToDatabase } from "./lib/db.js";
-import serverless from "serverless-http";
 
 dotenv.config();
 
-// Connect DB once
-await connectToDatabase();
+const PORT = process.env.PORT || 5000;
 
-// Export handler for Vercel
-export const handler = serverless(app);
+connectToDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to database:", err);
+    process.exit(1);
+  });
