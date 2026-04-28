@@ -21,7 +21,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // was: app.options("(.*)", ...)
+// ❌ app.options("(.*)", cors(corsOptions));  — original
+// ❌ app.options("*", cors(corsOptions));      — what you changed to
+// ✅ Correct:
+app.options("/{*path}", cors(corsOptions));
 
 app.use(express.json());
 
